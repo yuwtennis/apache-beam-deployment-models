@@ -1,0 +1,58 @@
+version: '3'
+services:
+  #
+  # flink containers
+  # based on https://hub.docker.com/_/flink
+  #
+  jobmanager:
+    image: flink:1.9
+    expose:
+      - "6123"
+    ports:
+      - "8081:8081"
+    command: jobmanager
+    environment:
+      - JOB_MANAGER_RPC_ADDRESS=jobmanager
+    networks:
+      - pipeline
+      
+  taskmanager:
+    image: flink:1.9
+    volumes:
+      - /tmp:/tmp
+    expose:
+      - "6121"
+      - "6122"
+    depends_on:
+      - jobmanager
+    command: taskmanager
+    environment:
+      - JOB_MANAGER_RPC_ADDRESS=jobmanager
+    networks:
+      - pipeline
+
+  jobserver:
+    build: ./jobserver
+    environment:
+      - FLINK_MASTER_URL=jobmanager:8081
+      - ARTIFACTS_DIR=/tmp
+      - JOB_HOST=jobserver
+      - JOB_PORT=8099
+    volumes:
+      - /tmp:/tmp
+    networks:
+      - pipeline
+
+  python-sdk:
+    image: asia.gcr.io/elite-caster-125113/python:3.7-stretch
+    networks:
+      - pipeline
+
+  beam:
+    build: ./samples
+    image: beam:latest
+    networks:
+      - pipeline
+    
+networks:
+  pipeline:
