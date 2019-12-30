@@ -1,0 +1,62 @@
+version: "2.1"
+services:
+  jobmanager:
+    image: flink:1.9
+    expose:
+      - "6123"
+    ports:
+      - "8081:8081"
+    command: jobmanager
+    environment:
+      - JOB_MANAGER_RPC_ADDRESS=jobmanager
+    networks:
+      - pipeline
+
+  taskmanager:
+    image: flink:1.9
+    expose:
+      - "6121"
+      - "6122"
+    depends_on:
+      - jobmanager
+    command: taskmanager
+    links:
+      - "jobmanager:jobmanager"
+    environment:
+      - JOB_MANAGER_RPC_ADDRESS=jobmanager
+      - GOOGLE_APPLICATION_CREDENTIALS=${GOOGLE_APPLICATION_CREDENTIALS}
+    networks:
+      - pipeline
+    volumes:
+      - ./gcs-key.json:${GOOGLE_APPLICATION_CREDENTIALS}
+
+  jobserver:
+    image: asia.gcr.io/elite-caster-125113/flink1.9_job_server:latest
+    command: [ "--artifacts-dir", "${ARTIFACTS_DIR}", "--flink-master-url",
+               "${FLINK_MASTER_URL}", "--job-host", "${JOB_HOST}", "--job-port", "${JOB_PORT}" ]
+    environment:
+      - GOOGLE_APPLICATION_CREDENTIALS=${GOOGLE_APPLICATION_CREDENTIALS}
+    volumes:
+      - ./gcs-key.json:${GOOGLE_APPLICATION_CREDENTIALS}
+    networks:
+      - pipeline
+
+  python-sdk:
+    image: asia.gcr.io/elite-caster-125113/python3.7_sdk:2.19.0.dev
+    ports:
+      - 50000:50000
+    command: --worker_pool
+    networks:
+      - pipeline
+
+  beam:
+    build: ./samples
+    image: beam:latest
+    environment:
+      - SDK_ENDPOINT=python-sdk:50000
+      - JOB_SERVER=jobserver:8099
+    networks:
+      - pipeline
+    
+networks:
+  pipeline:
