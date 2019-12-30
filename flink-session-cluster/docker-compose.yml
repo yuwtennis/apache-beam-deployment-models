@@ -1,5 +1,10 @@
 version: "2.1"
 services:
+
+  #
+  # jobmanager and taskmanager based on session cluster
+  # https://ci.apache.org/projects/flink/flink-docs-release-1.9/ops/deployment/docker.html#flink-session-cluster
+  #
   jobmanager:
     image: flink:1.9
     expose:
