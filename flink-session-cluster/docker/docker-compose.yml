@@ -36,7 +36,8 @@ services:
   jobserver:
     image: ${GCR_HOSTNAME}/${PROJECT_ID}/flink-job-server:${BEAM_RELEASE}
     command: [ "--artifacts-dir", "${ARTIFACTS_DIR}", "--flink-master-url",
-               "${FLINK_MASTER_URL}", "--job-host", "${JOB_HOST}", "--job-port", "${JOB_PORT}" ]
+               "${FLINK_MASTER_URL}", "--job-host", "${JOB_HOST}", "--job-port", "${JOB_PORT}",
+               "--clean-artifacts-per-job", "true" ]
     environment:
       - GOOGLE_APPLICATION_CREDENTIALS=${GOOGLE_APPLICATION_CREDENTIALS}
     volumes:
