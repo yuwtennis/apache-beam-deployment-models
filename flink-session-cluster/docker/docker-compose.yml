@@ -6,7 +6,7 @@ services:
   # https://ci.apache.org/projects/flink/flink-docs-release-1.9/ops/deployment/docker.html#flink-session-cluster
   #
   jobmanager:
-    image: flink:1.9
+    image: flink:${FLINK_VERSION}
     expose:
       - "6123"
     ports:
@@ -18,25 +18,23 @@ services:
       - pipeline
 
   taskmanager:
-    image: flink:1.9
+    image: flink:${FLINK_VERSION}
     expose:
       - "6121"
       - "6122"
     depends_on:
       - jobmanager
     command: taskmanager
-    links:
-      - "jobmanager:jobmanager"
     environment:
       - JOB_MANAGER_RPC_ADDRESS=jobmanager
       - GOOGLE_APPLICATION_CREDENTIALS=${GOOGLE_APPLICATION_CREDENTIALS}
-    networks:
-      - pipeline
     volumes:
       - ./gcs-key.json:${GOOGLE_APPLICATION_CREDENTIALS}
+    networks:
+      - pipeline
 
   jobserver:
-    image: asia.gcr.io/elite-caster-125113/flink1.9_job_server:latest
+    image: ${GCR_HOSTNAME}/${PROJECT_ID}/flink-job-server:${BEAM_RELEASE}
     command: [ "--artifacts-dir", "${ARTIFACTS_DIR}", "--flink-master-url",
                "${FLINK_MASTER_URL}", "--job-host", "${JOB_HOST}", "--job-port", "${JOB_PORT}" ]
     environment:
@@ -47,9 +45,9 @@ services:
       - pipeline
 
   python-sdk:
-    image: asia.gcr.io/elite-caster-125113/python3.7_sdk:2.19.0.dev
-    ports:
-      - 50000:50000
+    image: ${GCR_HOSTNAME}/${PROJECT_ID}/python3.7_sdk:${BEAM_RELEASE}
+    expose:
+      - "50000"
     command: --worker_pool
     networks:
       - pipeline

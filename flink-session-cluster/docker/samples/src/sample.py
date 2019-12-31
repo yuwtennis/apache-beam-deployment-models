@@ -7,12 +7,15 @@ from apache_beam.options.pipeline_options import SetupOptions
 
 def main():
 
+    sdk_endpoint = os.getenv('SDK_ENDPOINT')
+    job_server   = os.getenv('JOB_SERVER')
+
     options = PipelineOptions([
                       "--runner=PortableRunner",
-                      "--environment_config=" + os.getenv('SDK_ENDPOINT'),
+                      "--environment_config="+sdk_endpoint,
                       "--environment_type=EXTERNAL",
                       "--experiments=beam_fn_api",
-                      "--job_endpoint="+os.getenv('JOB_SERVER')
+                      "--job_endpoint="+job_server
                   ])
 
     options.view_as(SetupOptions).save_main_session = True
