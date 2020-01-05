@@ -13,9 +13,8 @@ services:
       - "8081:8081"
     command: jobmanager
     environment:
-      - JOB_MANAGER_RPC_ADDRESS=jobmanager
-    networks:
-      - pipeline
+      - JOB_MANAGER_RPC_ADDRESS=localhost
+    network_mode: host
 
   taskmanager:
     image: flink:${FLINK_VERSION}
@@ -26,12 +25,11 @@ services:
       - jobmanager
     command: taskmanager
     environment:
-      - JOB_MANAGER_RPC_ADDRESS=jobmanager
+      - JOB_MANAGER_RPC_ADDRESS=localhost
       - GOOGLE_APPLICATION_CREDENTIALS=${GOOGLE_APPLICATION_CREDENTIALS}
     volumes:
       - ./gcs-key.json:${GOOGLE_APPLICATION_CREDENTIALS}
-    networks:
-      - pipeline
+    network_mode: host
 
   jobserver:
     image: ${GCR_HOSTNAME}/${PROJECT_ID}/flink-job-server:${BEAM_RELEASE}
@@ -42,25 +40,55 @@ services:
       - GOOGLE_APPLICATION_CREDENTIALS=${GOOGLE_APPLICATION_CREDENTIALS}
     volumes:
       - ./gcs-key.json:${GOOGLE_APPLICATION_CREDENTIALS}
-    networks:
-      - pipeline
+    network_mode: host
 
   python-sdk:
     image: ${GCR_HOSTNAME}/${PROJECT_ID}/python3.7_sdk:${BEAM_RELEASE}
     expose:
       - "50000"
+    environment:
+      - GOOGLE_APPLICATION_CREDENTIALS=${GOOGLE_APPLICATION_CREDENTIALS}
+    volumes:
+      - ./gcs-key.json:${GOOGLE_APPLICATION_CREDENTIALS}
     command: --worker_pool
-    networks:
-      - pipeline
+    network_mode: host
 
   beam:
     build: ./samples
     image: beam:latest
     environment:
-      - SDK_ENDPOINT=python-sdk:50000
-      - JOB_SERVER=jobserver:8099
-    networks:
-      - pipeline
-    
-networks:
-  pipeline:
+      - PROJECT_ID=${PROJECT_ID}
+      - SDK_ENDPOINT=localhost:50000
+      - JOB_SERVER=localhost:8099
+    network_mode: host
+
+  #
+  # FOR DEVELOPMENT PURPOSE
+  # Zookeeper configurtion
+  # Based on
+  # https://hub.docker.com/_/zookeeper
+  #
+  zoo:
+    image: zookeeper
+    network_mode: host
+    environment:
+      - ZOO_STANDALONE_ENABLED=true
+
+  #
+  # FOR DEVELOPMENT PURPOSE
+  # Kafka configuration for single node cluster
+  # Based on
+  # https://docs.confluent.io/current/installation/docker/config-reference.html#confluent-kafka-configuration
+  #
+  kafka:
+    image: confluentinc/cp-kafka
+    network_mode: host
+    environment:
+      - KAFKA_ZOOKEEPER_CONNECT=localhost:2181
+      - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://localhost:9092
+      - KAFKA_LISTENERS=PLAINTEXT://localhost:9092
+      - KAFKA_BROKER_ID=1
+      - KAFKA_CONFLUENT_SUPPORT_METRICS.ENABLE=false
+      - KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1
+    depends_on:
+      - zoo
