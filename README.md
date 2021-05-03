@@ -1,4 +1,4 @@
-# beam-deployment
+# apache-beam
 
 This repository includes configuration for sample beam deployment.
 
