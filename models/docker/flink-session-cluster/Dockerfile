@@ -10,6 +10,6 @@ COPY requirements.txt ./
 RUN apt-get update && apt-get install -y build-essential \
       && pip3 install --no-cache-dir -r requirements.txt
 
-COPY ./src src
+COPY __main__.py .
 
-ENTRYPOINT python3 src/sample.py 
+ENTRYPOINT python3 __main__.py

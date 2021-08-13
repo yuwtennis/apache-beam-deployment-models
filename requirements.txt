@@ -1,0 +1,2 @@
+# Deployment model specific packages
+apache-beam==2.31.0
